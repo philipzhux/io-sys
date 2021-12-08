@@ -33,8 +33,8 @@ MODULE_LICENSE("GPL");
 #define DMAOPCODEADDR 0x20      // data_a opcode
 #define DMAOPERANDBADDR 0x21    // data_b operand1
 #define DMAOPERANDCADDR 0x25    // data_c operand2
-void *dma_buf;
-int irqq_count;
+static void *dma_buf;
+static int irqq_count;
 // Declaration for file operations
 static ssize_t drv_read(struct file *filp, char __user *buffer, size_t, loff_t*);
 static int drv_open(struct inode*, struct file*);
@@ -243,6 +243,7 @@ void irq_handler(int irq, void *dev_id, struct pt_regs *regs){
 static int __init init_modules(void) {
     
 	dev_t dev;
+	int irq_return;
 
 	printk("%s:%s():...............Start...............\n", PREFIX_TITLE, __func__);
   	
@@ -267,14 +268,14 @@ static int __init init_modules(void) {
 		printk(KERN_ALERT"Add cdev failed!\n");
 		return -1;
    	}
-	int irq_return;
+	
 	irqq_count = 0;
 	typedef irqreturn_t (*irq_handler_t)(int, void *);
 	irq_return = request_irq(IRQ_NUM,   /* The number of the keyboard IRQ on PCs */ 
               (irq_handler_t)irq_handler, /* our handler */
               IRQF_SHARED, 
               "test_keyboard_irq_handler", &dev_unique);
-	printk("%s:%s(): request_irq %d returns %d\n",IRQ_NUM,irq_return, PREFIX_TITLE, __func__);
+	printk("%s:%s(): request_irq %d returns %d\n", PREFIX_TITLE, __func__,IRQ_NUM,irq_return);
 
 	// Alloc DMA buffer
 	printk("%s:%s(): allocate dma buffer\n", PREFIX_TITLE, __func__);
