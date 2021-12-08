@@ -34,7 +34,6 @@ MODULE_LICENSE("GPL");
 #define DMAOPERANDBADDR 0x21    // data_b operand1
 #define DMAOPERANDCADDR 0x25    // data_c operand2
 static void *dma_buf;
-static int irqq_count;
 // Declaration for file operations
 static ssize_t drv_read(struct file *filp, char __user *buffer, size_t, loff_t*);
 static int drv_open(struct inode*, struct file*);
@@ -147,6 +146,7 @@ static ssize_t drv_read(struct file *filp, char __user *buffer, size_t ss, loff_
 	ans = myini(DMAANSADDR);
 	put_user(ans,(int*) buffer);
 	myouti(0,DMAREADABLEADDR);
+	printk("%s:%s(): ans = %d\n", PREFIX_TITLE, __func__,ans);
 	return 0;
 }
 static ssize_t drv_write(struct file *filp, const char __user *buffer, size_t ss, loff_t* lo) {
@@ -236,8 +236,9 @@ static void drv_arithmetic_routine(struct work_struct* ws) {
 	myouti(1,DMAREADABLEADDR);
 }
 
-void irq_handler(int irq, void *dev_id, struct pt_regs *regs){
-	irqq_count++;
+irqreturn_t irq_handler(int irq, void *dev_id){
+	myouti(myini(DMACOUNTADDR)+1,DMACOUNTADDR);
+	return IRQ_HANDLED;
 }
 
 static int __init init_modules(void) {
@@ -269,7 +270,6 @@ static int __init init_modules(void) {
 		return -1;
    	}
 	
-	irqq_count = 0;
 	typedef irqreturn_t (*irq_handler_t)(int, void *);
 	irq_return = request_irq(IRQ_NUM,   /* The number of the keyboard IRQ on PCs */ 
               (irq_handler_t)irq_handler, /* our handler */
@@ -284,6 +284,8 @@ static int __init init_modules(void) {
 	// Alloc work routine
     work = kmalloc(sizeof(typeof(*work)), GFP_KERNEL);
 
+	myouti(0,DMACOUNTADDR);
+
 	return 0;
 }
 
@@ -292,7 +294,7 @@ static void __exit exit_modules(void) {
 	unregister_chrdev_region(MKDEV(dev_major,dev_minor), DEV_COUNT);
 	cdev_del(dev_cdev);
 	// Free work routine and dma_buf
-	printk("%s:%s(): interrupt count = %d\n", PREFIX_TITLE, __func__,irqq_count);
+	printk("%s:%s(): interrupt count = %d\n", PREFIX_TITLE, __func__,myini(DMACOUNTADDR));
 	free_irq(IRQ_NUM,&dev_unique);
 	kfree(work);
 	printk("%s:%s(): free dma buffer\n", PREFIX_TITLE, __func__);
