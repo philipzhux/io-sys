@@ -1,5 +1,5 @@
 # Simple I/O System Implementation
-**Zhu Chuyan** 119010486 **at** *The Chinese University of Hong Kong, Shenzhen*
+
 ## Table of contents
 - [Simple I/O System Implementation](#simple-io-system-implementation)
   - [Table of contents](#table-of-contents)
